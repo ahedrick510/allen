@@ -24,4 +24,11 @@
 // Put function declarations here
 void blinkLED(int ledPin, int delayTime); //this is just an example
 
+//#include <Pixy2.h>
+//Pixy2 pixy;
+//void setupPixy();
+//Block getPixyBlockData();
+//uint16_t getPixyXCoord();
+//uint16_t getPixyColor();
+
 #endif
