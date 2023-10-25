@@ -10,6 +10,11 @@ void PixyControl(uint16_t x){
     // calculate error
     double error = x - r;
     
-
+    digitalWrite(AIN1,HIGH);
+    digitalWrite(AIN2,LOW);
+    digitalWrite(BIN1,HIGH);
+    digitalWrite(BIN2,LOW);
+    analogWrite(PWM1,255);
+    analogWrite(PWM2,-255);
 
 }
