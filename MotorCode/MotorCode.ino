@@ -1,4 +1,6 @@
 
+#include <Pixy2.h>
+
 #define PWM1 2
 #define AIN1 26
 #define AIN2 24
@@ -19,6 +21,11 @@
 #define BL_S 45 // Back left sensor
 #define FR_S 25 // Front right sensor
 
+Pixy2 pixy;
+void setupPixy();
+Block getPixyBlockData();
+uint16_t getPixyXCoord();
+uint16_t getPixyColor();
 
 //long duration, cm, dist;
 
@@ -44,6 +51,8 @@ void setup() {
   pinMode(ECHO_B,INPUT);
   
   digitalWrite(STANDBY,HIGH);
+
+  setupPixy();
 }
 
 // reading 1 is white space
@@ -88,6 +97,22 @@ if (isFR_S_Active) {
     forward(); // Move forward if none of the above conditions are met
 }
 
+  Block pixyBlocks = getPixyBlockData();
+  bool targetIsOnTheLeft = getPixyXCoord() < 153; // 0-315
+  bool targetIsOnTheRight = getPixyXCoord() > 162;
+  bool shoot = getPixyXCoord() < 162 && getPixyXCoord() > 153;
+  
+  if (targetIsOnTheLeft) {
+    turnLeft();
+  }
+  else if (targetIsOnTheRight) {
+    turnRight();
+  }
+  else if (shoot){
+    // turn on servo and shoot
+    stopMotor();
+    delay(1000);
+  }
 
 }
 
@@ -146,6 +171,28 @@ void turnRight() {
   digitalWrite(BIN2,HIGH);
   analogWrite(PWM1,100);
   analogWrite(PWM2,100);
+}
+
+void setupPixy() {
+  pixy.init();
+}
+
+Block getPixyBlockData(){ 
+  pixy.ccc.getBlocks();
+  if (pixy.ccc.numBlocks){
+    Serial.print("Detected ");
+    Serial.println(pixy.ccc.numBlocks);
+    pixy.ccc.blocks[0].print();
+    return pixy.ccc.blocks[0];
+  }  
+}
+
+uint16_t getPixyXCoord() {
+  return getPixyBlockData().m_x;
+}
+
+uint16_t getPixyColor() {
+  return getPixyBlockData().m_signature;
 }
 
 ///* get distance from ultrasonic sensor */
