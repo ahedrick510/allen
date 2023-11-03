@@ -98,6 +98,7 @@ void loop() {
 //    forward(); // Move forward if none of the above conditions are met
 //}
 
+
   // CHANGE THESE VALUES LATER 
   Block pixyBlocks = getPixyBlockData();
   x = getPixyXCoord();
@@ -149,8 +150,8 @@ void forward(){
   digitalWrite(AIN2,HIGH);
   digitalWrite(BIN1,LOW); //Motor B Rotate Counter Clockwise
   digitalWrite(BIN2,HIGH);
-  analogWrite(PWM1,100);
-  analogWrite(PWM2,100);
+  analogWrite(PWM1,200);
+  analogWrite(PWM2,200);
 }
 
 void backward(){
@@ -162,18 +163,18 @@ void backward(){
   analogWrite(PWM2,100);
 }
 
-void turnLeft() {
-  digitalWrite(AIN1,LOW);
-  digitalWrite(AIN2,HIGH);
-  digitalWrite(BIN1,LOW);
+void turnRight() {
+  digitalWrite(AIN1,HIGH); // 1 = left motor, 2 = right motor, both HIGH = forward, both LOW = backward
+  digitalWrite(AIN2,LOW);
+  digitalWrite(BIN1,HIGH);  
   digitalWrite(BIN2,LOW);
   analogWrite(PWM1,100);
   analogWrite(PWM2,100);
 }
 
-void turnRight() {
+void turnLeft() {
   digitalWrite(AIN1,LOW);
-  digitalWrite(AIN2,LOW);
+  digitalWrite(AIN2,HIGH);
   digitalWrite(BIN1,LOW);
   digitalWrite(BIN2,HIGH);
   analogWrite(PWM1,100);
