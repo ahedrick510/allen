@@ -26,6 +26,7 @@ void setupPixy();
 Block getPixyBlockData();
 uint16_t getPixyXCoord();
 uint16_t getPixyColor();
+uint16_t x;
 
 //long duration, cm, dist;
 
@@ -85,35 +86,41 @@ void loop() {
 //    forward(); // Move forward if none of the above conditions are met
 //}
 
-if (isFR_S_Active) {
-    backward(); // Move forward when all sensors are inactive
-} else if (isFL_S_Active) {
-    backward(); // Move backward if any of the front sensors are active
-} else if (isBR_S_Active) {
-    turnLeft(); // Turn left if back right sensor active
-} else if (isBL_S_Active) {
-    turnRight(); // Turn right if back left sensor active
-} else {
-    forward(); // Move forward if none of the above conditions are met
-}
+//if (isFR_S_Active) {
+//    backward(); // Move forward when all sensors are inactive
+//} else if (isFL_S_Active) {
+//    backward(); // Move backward if any of the front sensors are active
+//} else if (isBR_S_Active) {
+//    turnLeft(); // Turn left if back right sensor active
+//} else if (isBL_S_Active) {
+//    turnRight(); // Turn right if back left sensor active
+//} else {
+//    forward(); // Move forward if none of the above conditions are met
+//}
 
+  // CHANGE THESE VALUES LATER 
   Block pixyBlocks = getPixyBlockData();
-  bool targetIsOnTheLeft = getPixyXCoord() < 153; // 0-315
-  bool targetIsOnTheRight = getPixyXCoord() > 162;
-  bool shoot = getPixyXCoord() < 162 && getPixyXCoord() > 153;
+  x = getPixyXCoord();
+  bool targetIsOnTheLeft = x < 145; // 0-315
+  bool targetIsOnTheRight = x > 170;
+  bool shoot = x > 145 && x < 170;
   
   if (targetIsOnTheLeft) {
+    Serial.println("left");
     turnLeft();
   }
   else if (targetIsOnTheRight) {
+    Serial.println("right");
     turnRight();
   }
   else if (shoot){
     // turn on servo and shoot
+    Serial.println("shoot");
     stopMotor();
-    delay(1000);
+    delay(5000);
   }
 
+//  delay(500);
 }
 
 //void loop() {
