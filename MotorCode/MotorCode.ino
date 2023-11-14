@@ -1,4 +1,3 @@
-
 #include <Pixy2.h>
 
 #define PWM1 2
@@ -20,6 +19,8 @@
 #define FL_S 23 // Fron left sensor
 #define BL_S 45 // Back left sensor
 #define FR_S 25 // Front right sensor
+
+#define NO_TARGET_DETECTED 999
 
 Pixy2 pixy;
 void setupPixy();
@@ -60,6 +61,7 @@ void setup() {
   digitalWrite(STANDBY, HIGH);
 
   setupPixy();
+  randomSeed(0);
 }
 
 // reading 1 is white space
@@ -68,124 +70,139 @@ bool isBL_S_Active = false;
 bool isFR_S_Active = false;
 bool isFL_S_Active = false;
 
+bool targetIsOnTheLeft = false;
+bool targetIsOnTheRight = false;
+bool shoot = false;
+bool noTarget = false;
+
+
 void loop() {
+  //getIRData();
+  isBR_S_Active = digitalRead(BR_S) == 0;
+  isBL_S_Active = digitalRead(BL_S) == 0;
+  isFR_S_Active = digitalRead(FR_S) == 0;
+  isFL_S_Active = digitalRead(FL_S) == 0;
+  Serial.println("IR sensor data :");
+  Serial.println(isBR_S_Active);
+  Serial.println(isBL_S_Active);
+  Serial.println(isFR_S_Active);
+  Serial.println(isFL_S_Active);
+  /* AIMING DATA FROM PIXY */
+  x = getPixyXCoord();
+  // update the target data
+  if (x == NO_TARGET_DETECTED) {
+    noTarget = true;
+    targetIsOnTheLeft = false;
+    targetIsOnTheRight = false;
+    shoot = false;
+  }
+  else {
+    noTarget = false;
+    targetIsOnTheLeft = x < (middle - 10); // 0-315
+    targetIsOnTheRight = x > (middle + 10);
+    shoot = x >= (middle - 10) && x <= (middle + 10);
+  }
+  Serial.println("Target :");
+  Serial.println(targetIsOnTheLeft);
+  Serial.println(targetIsOnTheRight);
+  Serial.println(shoot);
+  Serial.println(noTarget);
+
+
+  ///////////////// IR SENSOR /////////////////////////////
+  if (isFR_S_Active || isFL_S_Active) {
+    backward(75);                        // Move backward if any of the front sensors are active
+    //delay(500);
+    Serial.print("BW");  
+  }
+  else if (isBR_S_Active) {
+    forward(75);
+    turnLeft(75);                        // Turn left if back right sensor active
+    //delay(500);
+    Serial.print("LEFT");  
+  }
+  else if (isBL_S_Active) {
+    forward(75);
+    turnRight(75);                       // Turn right if back left sensor active
+    //delay(500);
+    Serial.print("RIGHT");  
+  }
+  else if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
+    /////////////////////// PIXY CONTROL //////////////////////////
+    if (noTarget) {
+      //////// Random Movement ////////////
+      int randDir = random(3);                            // 0 - left or 1 - right
+      int randDelay = random(500, 1500);
+      if (randDir == 0){
+        turnLeft(150);
+      }
+      else if (randDir == 1) {
+        turnRight(150);
+      }
+      else if (randDir == 2) {
+        forward(150);
+      }
+      //delay(randDelay);
+      //stopMotor();
+        //forward(100);
+        //Serial.println("FW");
+    }
+    else {
+      /* Aiming the target */
+      ///// MOTOR SPEED P CONTROL //////////
+      turning_speed = p * (middle - x);
+      turning_speed = map(abs(turning_speed), 0, 158, 10, 125); // changing turning speed to pwm control (puts value between 10 and 200 out of 255)
+      Serial.print("turning speed = ");
+      Serial.println(turning_speed);
+
+      if (targetIsOnTheLeft) {
+        Serial.println("left");
+        isTurningLeft = true;
+        isTurningRight = false;
+        turnLeft(turning_speed);
+      }
+      else if (targetIsOnTheRight) {
+        Serial.println("right");
+        isTurningLeft = false;
+        isTurningRight = true;
+        turnRight(turning_speed);
+      }
+      else if (shoot) {
+        /* ------------------------------------------------ Can remove the delay ? ------------------------------------------*/
+//        Serial.println("shoot");
+//        if (isTurningLeft) {
+//          turnRight(200);
+//          delay(pause);
+//          Serial.println("stopLeft");
+//          stopMotor();
+//        } else if (isTurningRight) {
+//          turnLeft(200);
+//          delay(pause);
+//          Serial.println("stopRight");
+//          stopMotor();
+//        }
+        stopMotor();
+        ///// SHOOT FUNCTION GO HERE ///////
+        delay(1000);
+      }
+    }
+  }
+}
+
+
+//void getIRData() {
 //  isBR_S_Active = digitalRead(BR_S) == 0;
 //  isBL_S_Active = digitalRead(BL_S) == 0;
 //  isFR_S_Active = digitalRead(FR_S) == 0;
 //  isFL_S_Active = digitalRead(FL_S) == 0;
-
+//
+//  Serial.println("IR sensor data :");
 //  Serial.println(isBR_S_Active);
 //  Serial.println(isBL_S_Active);
 //  Serial.println(isFR_S_Active);
 //  Serial.println(isFL_S_Active);
-
-  ///////// OLD GET X ///////////
-//  Block pixyBlocks = getPixyBlockData();
-  x = getPixyXCoord();
-  Serial.print("x = ");
-  Serial.println(x);
-  
-  bool targetIsOnTheLeft = x < (middle - 10); // 0-315
-  bool targetIsOnTheRight = x > (middle + 10);
-  bool shoot = x >= (middle - 10) && x <= (middle + 10);
-
-  Serial.println(targetIsOnTheLeft);
-  Serial.println(targetIsOnTheRight);
-  Serial.println(shoot);
-  if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
-
-    ////////////////// ROOMBA STYLE MOVING /////////////////////
-    // HERE
-    ////////
-    
-    ////////////////// PIXY CODE ////////////////////////////
-
-    ///// MOTOR SPEED P CONTROL //////////
-    turning_speed = p*(middle - x);
-    turning_speed = map(abs(turning_speed), 0, 158, 10, 125); // changing turning speed to pwm control (puts value between 10 and 200 out of 255)
-    Serial.print("turning speed = ");
-    Serial.println(turning_speed);
-    
-    if (targetIsOnTheLeft) {
-      Serial.println("left");
-      isTurningLeft = true;
-      isTurningRight = false;
-      turnLeft(turning_speed);
-    }
-    else if (targetIsOnTheRight) {
-      Serial.println("right");
-      isTurningLeft = false;
-      isTurningRight = true;
-      turnRight(turning_speed);
-    }
-    else if (shoot) {
-      Serial.println("shoot");
-      if (isTurningLeft) {
-        turnRight(200);
-        delay(pause);
-        Serial.println("stopLeft");
-        stopMotor();
-      } else if (isTurningRight) {
-        turnLeft(200);
-        delay(pause);
-        Serial.println("stopRight");
-        stopMotor();
-      } else {
-        // Handle the case when the direction is not determined
-      }
-      delay(1000);
-
-    targetIsOnTheLeft = 0;
-    targetIsOnTheRight = 0;
-    shoot = 0;
-    
-    }
-    else {
-      // Move forward if none of the above conditions are met
-      forward(100);
-    }
-
-
-  /////////////////// IR SENSOR CODE ////////////////////////////////////////////  
-  } else if (isFR_S_Active || isFL_S_Active) {
-    backward(100); // Move backward if any of the front sensors are active
-  } else if (isBR_S_Active) {
-    turnLeft(100); // Turn left if back right sensor active
-  } else if (isBL_S_Active) {
-    turnRight(100); // Turn right if back left sensor active
-  } else {
-    
-  }
-
-  ////////////////// OLD IR SENSOR CODE /////////////////////////
-
-  //if (isFR_S_Active) {
-  //    backward(); // Move forward when all sensors are inactive
-  //} else if (isFL_S_Active) {
-  //    backward(); // Move backward if any of the front sensors are active
-  //} else if (isBR_S_Active) {
-  //    turnLeft(); // Turn left if back right sensor active
-  //} else if (isBL_S_Active) {
-  //    turnRight(); // Turn right if back left sensor active
-  //} else {
-  //    forward(); // Move forward if none of the above conditions are met
-  //}
-
-  //  delay(500);
-}
-
-//void loop() {
-//  dist = getUltrasonicDist();
-//  if (dist <= 10) {
-//    stopMotor();
-//  }
-//  else {
-//    forward();
-//  }
-//  delay(250);
 //}
 
-//////////////////// MOTOR FUNCTIONS ////////////////////////
 void stopMotor() {
   digitalWrite(AIN1, LOW); //Motor A Rotate Counter Clockwise
   digitalWrite(AIN2, LOW);
@@ -196,18 +213,18 @@ void stopMotor() {
 }
 
 /* need to callibrate the direction and PWM value */
-void forward(int w) {
-  digitalWrite(AIN1, LOW); //Motor A Rotate Counter Clockwise
-  digitalWrite(AIN2, HIGH);
+void backward(int w) {
+  digitalWrite(AIN1, HIGH); //Motor A Rotate Counter Clockwise
+  digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, LOW); //Motor B Rotate Counter Clockwise
   digitalWrite(BIN2, HIGH);
   analogWrite(PWM1, w);
   analogWrite(PWM2, w);
 }
 
-void backward(int w) {
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
+void forward(int w) {
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
   analogWrite(PWM1, w);
@@ -241,20 +258,18 @@ Block getPixyBlockData() {
   if (pixy.ccc.numBlocks) {
     //Serial.print("Detected ");
     //Serial.println(pixy.ccc.numBlocks);
-//    pixy.ccc.blocks[0].print();
+    //    pixy.ccc.blocks[0].print();
     return pixy.ccc.blocks[0];
-    
+
   }
 }
 
 uint16_t getPixyXCoord() {
   pixy.ccc.getBlocks();
   if (pixy.ccc.numBlocks) {
-    //Serial.print("Detected ");
-    //Serial.println(pixy.ccc.numBlocks);
-//    pixy.ccc.blocks[0].print();
     return pixy.ccc.blocks[0].m_x;
   }
+  return NO_TARGET_DETECTED;
 }
 
 uint16_t getPixyColor() {
@@ -273,4 +288,16 @@ uint16_t getPixyColor() {
 //  Serial.print(cm);
 //  Serial.println("cm");
 //  return cm;
+//}
+
+
+//void loop() {
+//  dist = getUltrasonicDist();
+//  if (dist <= 10) {
+//    stopMotor();
+//  }
+//  else {
+//    forward();
+//  }
+//  delay(250);
 //}
