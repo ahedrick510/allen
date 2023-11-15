@@ -35,6 +35,7 @@ const int p = 1; // p value for motor speed
 int turning_speed = 0; // motor turning speed when it sees enemy robot
 const int middle = 158; // middle of pixy view
 
+unsigned long time;
 //long duration, cm, dist;
 
 void setup() {
@@ -77,6 +78,7 @@ bool noTarget = false;
 
 
 void loop() {
+  time = millis();
   //getIRData();
   isBR_S_Active = digitalRead(BR_S) == 0;
   isBL_S_Active = digitalRead(BL_S) == 0;
@@ -87,6 +89,7 @@ void loop() {
   Serial.println(isBL_S_Active);
   Serial.println(isFR_S_Active);
   Serial.println(isFL_S_Active);
+  
   /* AIMING DATA FROM PIXY */
   x = getPixyXCoord();
   // update the target data
@@ -108,43 +111,77 @@ void loop() {
   Serial.println(shoot);
   Serial.println(noTarget);
 
-
+  int randDelay = random(500, 1500);
+  //int randDir1 = random(2);
   ///////////////// IR SENSOR /////////////////////////////
-  if (isFR_S_Active || isFL_S_Active) {
+  if (isFR_S_Active){
     backward(75);                        // Move backward if any of the front sensors are active
-    //delay(500);
-    Serial.print("BW");  
+    //Serial.println("BW");
+    turnLeft(75);
+    while (millis() < time + randDelay) {
+      getIRData();
+        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+          stopMotor();
+          break;
+        }
+        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+          stopMotor();
+          break;
+        }
+    }
+  }
+  else if (isFL_S_Active) {
+    backward(75);                        // Move backward if any of the front sensors are active
+    //Serial.println("BW");
+    turnRight(75);
+    while (millis() < time + randDelay) {
+      getIRData();
+        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+          stopMotor();
+          break;
+        }
+        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+          stopMotor();
+          break;
+        }
+    }
   }
   else if (isBR_S_Active) {
     forward(75);
     turnLeft(75);                        // Turn left if back right sensor active
-    //delay(500);
-    Serial.print("LEFT");  
+    Serial.println("LEFT");
+    while (millis() < time + randDelay) {
+      getIRData();
+        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+          stopMotor();
+          break;
+        }
+        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+          stopMotor();
+          break;
+        }
+    }
   }
   else if (isBL_S_Active) {
     forward(75);
     turnRight(75);                       // Turn right if back left sensor active
-    //delay(500);
-    Serial.print("RIGHT");  
+    //Serial.println("RIGHT"); 
+    while (millis() < time + randDelay) {
+      getIRData();
+        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+          stopMotor();
+          break;
+        }
+        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+          stopMotor();
+          break;
+        }
+    } 
   }
   else if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
     /////////////////////// PIXY CONTROL //////////////////////////
     if (noTarget) {
-      //////// Random Movement ////////////
-      int randDir = random(3);                            // 0 - left or 1 - right
-      int randDelay = random(500, 1500);
-      if (randDir == 0){
-        turnLeft(150);
-      }
-      else if (randDir == 1) {
-        turnRight(150);
-      }
-      else if (randDir == 2) {
-        forward(150);
-      }
-      //delay(randDelay);
-      //stopMotor();
-        //forward(100);
+      forward(75);
         //Serial.println("FW");
     }
     else {
@@ -183,25 +220,18 @@ void loop() {
 //        }
         stopMotor();
         ///// SHOOT FUNCTION GO HERE ///////
-        delay(1000);
+        //delay(1000);
       }
     }
   }
 }
 
-
-//void getIRData() {
-//  isBR_S_Active = digitalRead(BR_S) == 0;
-//  isBL_S_Active = digitalRead(BL_S) == 0;
-//  isFR_S_Active = digitalRead(FR_S) == 0;
-//  isFL_S_Active = digitalRead(FL_S) == 0;
-//
-//  Serial.println("IR sensor data :");
-//  Serial.println(isBR_S_Active);
-//  Serial.println(isBL_S_Active);
-//  Serial.println(isFR_S_Active);
-//  Serial.println(isFL_S_Active);
-//}
+void getIRData() {
+  isBR_S_Active = digitalRead(BR_S) == 0;
+  isBL_S_Active = digitalRead(BL_S) == 0;
+  isFR_S_Active = digitalRead(FR_S) == 0;
+  isFL_S_Active = digitalRead(FL_S) == 0;
+}
 
 void stopMotor() {
   digitalWrite(AIN1, LOW); //Motor A Rotate Counter Clockwise
@@ -301,3 +331,28 @@ uint16_t getPixyColor() {
 //  }
 //  delay(250);
 //}
+
+
+// No Target
+
+//      int randDir = random(3);                            // 0 - left or 1 - right
+//      int randDelay = random(500, 1500);
+//      if (randDir == 0){
+//        turnLeft(75);
+//      }
+//      else if (randDir == 1) {
+//        turnRight(75);
+//      }
+//      else if (randDir == 2) {
+//        forward(75);
+//      }
+//      //delay(randDelay);
+//      while (millis() < time + randDelay) {
+//        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+//          break;
+//        }
+//        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+//            break;
+//    }
+//      }
+      //stopMotor();
