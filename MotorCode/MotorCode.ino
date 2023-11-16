@@ -1,4 +1,5 @@
 #include <Pixy2.h>
+#include <SPI.h>
 
 #define PWM1 2
 #define AIN1 26
@@ -16,7 +17,7 @@
 #define TRIG_B 47
 
 #define BR_S 43 // Back right sensor
-#define FL_S 23 // Fron left sensor
+#define FL_S 23 // Front left sensor
 #define BL_S 45 // Back left sensor
 #define FR_S 25 // Front right sensor
 
