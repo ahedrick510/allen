@@ -1,5 +1,4 @@
-#include <Pixy2.h>
-#include <SPI.h>
+#include <Pixy2I2C.h>
 
 #define PWM1 2
 #define AIN1 26
@@ -23,7 +22,7 @@
 
 #define NO_TARGET_DETECTED 999
 
-Pixy2 pixy;
+Pixy2I2C pixy;
 void setupPixy();
 Block getPixyBlockData();
 uint16_t getPixyXCoord();
@@ -116,13 +115,13 @@ void loop() {
   //int randDir1 = random(2);
   ///////////////// IR SENSOR /////////////////////////////
   if (isFR_S_Active){
-    backward(75);                        // Move backward if any of the front sensors are active
-    //Serial.println("BW");
-    turnLeft(75);
     while (millis() < time + randDelay) {
+      backward(100);                        // Move backward if any of the front sensors are active
+      //Serial.println("BW");
+      turnLeft(100);
       getIRData();
         if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-          stopMotor();
+//          stopMotor();
           break;
         }
         if (getPixyXCoord() != NO_TARGET_DETECTED) {
@@ -132,13 +131,13 @@ void loop() {
     }
   }
   else if (isFL_S_Active) {
-    backward(75);                        // Move backward if any of the front sensors are active
-    //Serial.println("BW");
-    turnRight(75);
     while (millis() < time + randDelay) {
+      backward(100);                        // Move backward if any of the front sensors are active
+      //Serial.println("BW");
+      turnRight(100);
       getIRData();
         if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-          stopMotor();
+//          stopMotor();
           break;
         }
         if (getPixyXCoord() != NO_TARGET_DETECTED) {
@@ -148,13 +147,13 @@ void loop() {
     }
   }
   else if (isBR_S_Active) {
-    forward(75);
-    turnLeft(75);                        // Turn left if back right sensor active
+//    turnLeft(100);                        // Turn left if back right sensor active
     Serial.println("LEFT");
     while (millis() < time + randDelay) {
+      forward(100);
       getIRData();
         if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-          stopMotor();
+//          stopMotor();
           break;
         }
         if (getPixyXCoord() != NO_TARGET_DETECTED) {
@@ -164,13 +163,13 @@ void loop() {
     }
   }
   else if (isBL_S_Active) {
-    forward(75);
-    turnRight(75);                       // Turn right if back left sensor active
+//    turnRight(100);                       // Turn right if back left sensor active
     //Serial.println("RIGHT"); 
     while (millis() < time + randDelay) {
+      forward(100);
       getIRData();
         if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-          stopMotor();
+//          stopMotor();
           break;
         }
         if (getPixyXCoord() != NO_TARGET_DETECTED) {
@@ -179,10 +178,10 @@ void loop() {
         }
     } 
   }
-  else if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
+ if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
     /////////////////////// PIXY CONTROL //////////////////////////
     if (noTarget) {
-      forward(75);
+      forward(100);
         //Serial.println("FW");
     }
     else {
