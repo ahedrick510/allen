@@ -1,4 +1,5 @@
 #include <Pixy2I2C.h>
+#include <Servo.h>
 
 #define PWM1 2
 #define AIN1 26
@@ -7,6 +8,8 @@
 #define BIN1 30
 #define BIN2 32
 #define STANDBY 28
+
+#define SERVO 9
 
 #define TRIG_L 20 // Left Ultrasonic
 #define ECHO_L 22
@@ -34,6 +37,9 @@ bool isTurningRight = false;
 const int p = 1; // p value for motor speed
 int turning_speed = 0; // motor turning speed when it sees enemy robot
 const int middle = 158; // middle of pixy view
+int ballCounter = 10;
+
+Servo myservo;
 
 unsigned long time;
 //long duration, cm, dist;
@@ -60,6 +66,8 @@ void setup() {
   pinMode(ECHO_B, INPUT);
 
   digitalWrite(STANDBY, HIGH);
+
+  myservo.attach(SERVO);  // attaches the servo on pin 9 to the servo object
 
   setupPixy();
   randomSeed(0);
@@ -89,7 +97,7 @@ void loop() {
   Serial.println(isBL_S_Active);
   Serial.println(isFR_S_Active);
   Serial.println(isFL_S_Active);
-  
+
   /* AIMING DATA FROM PIXY */
   x = getPixyXCoord();
   // update the target data
@@ -114,20 +122,20 @@ void loop() {
   int randDelay = random(500, 1500);
   //int randDir1 = random(2);
   ///////////////// IR SENSOR /////////////////////////////
-  if (isFR_S_Active){
+  if (isFR_S_Active) {
     while (millis() < time + randDelay) {
       backward(100);                        // Move backward if any of the front sensors are active
       //Serial.println("BW");
       turnLeft(100);
       getIRData();
-        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-//          stopMotor();
-          break;
-        }
-        if (getPixyXCoord() != NO_TARGET_DETECTED) {
-          stopMotor();
-          break;
-        }
+      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
+        break;
+      }
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
+        stopMotor();
+        break;
+      }
     }
   }
   else if (isFL_S_Active) {
@@ -136,53 +144,53 @@ void loop() {
       //Serial.println("BW");
       turnRight(100);
       getIRData();
-        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-//          stopMotor();
-          break;
-        }
-        if (getPixyXCoord() != NO_TARGET_DETECTED) {
-          stopMotor();
-          break;
-        }
+      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
+        break;
+      }
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
+        stopMotor();
+        break;
+      }
     }
   }
   else if (isBR_S_Active) {
-//    turnLeft(100);                        // Turn left if back right sensor active
+    //    turnLeft(100);                        // Turn left if back right sensor active
     Serial.println("LEFT");
     while (millis() < time + randDelay) {
       forward(100);
       getIRData();
-        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-//          stopMotor();
-          break;
-        }
-        if (getPixyXCoord() != NO_TARGET_DETECTED) {
-          stopMotor();
-          break;
-        }
+      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
+        break;
+      }
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
+        stopMotor();
+        break;
+      }
     }
   }
   else if (isBL_S_Active) {
-//    turnRight(100);                       // Turn right if back left sensor active
-    //Serial.println("RIGHT"); 
+    //    turnRight(100);                       // Turn right if back left sensor active
+    //Serial.println("RIGHT");
     while (millis() < time + randDelay) {
       forward(100);
       getIRData();
-        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-//          stopMotor();
-          break;
-        }
-        if (getPixyXCoord() != NO_TARGET_DETECTED) {
-          stopMotor();
-          break;
-        }
-    } 
+      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
+        break;
+      }
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
+        stopMotor();
+        break;
+      }
+    }
   }
- if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
+  if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
     /////////////////////// PIXY CONTROL //////////////////////////
     if (noTarget) {
       forward(100);
-        //Serial.println("FW");
+      //Serial.println("FW");
     }
     else {
       /* Aiming the target */
@@ -205,22 +213,19 @@ void loop() {
         turnRight(turning_speed);
       }
       else if (shoot) {
-        /* ------------------------------------------------ Can remove the delay ? ------------------------------------------*/
-//        Serial.println("shoot");
-//        if (isTurningLeft) {
-//          turnRight(200);
-//          delay(pause);
-//          Serial.println("stopLeft");
-//          stopMotor();
-//        } else if (isTurningRight) {
-//          turnLeft(200);
-//          delay(pause);
-//          Serial.println("stopRight");
-//          stopMotor();
-//        }
         stopMotor();
-        ///// SHOOT FUNCTION GO HERE ///////
-        //delay(1000);
+        myservo.write(0); // move the servo to desired angle
+        delay(100);
+        myservo.write(90); // move the servo to desired angle
+        delay(100);
+        myservo.write(0); // move the servo to desired angle
+        delay(100);
+        ballCounter -= 1;
+        Serial.println(ballCounter);
+        if (ballCounter == 0) {
+          // reload
+          ballCounter = 10;
+        }
       }
     }
   }
@@ -355,4 +360,4 @@ uint16_t getPixyColor() {
 //            break;
 //    }
 //      }
-      //stopMotor();
+//stopMotor();
