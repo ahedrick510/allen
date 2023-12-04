@@ -18,7 +18,7 @@
 #define ECHO_B 49 // Back ultrasonic
 #define TRIG_B 47
 
-#define BR_S 43 // Back right sensor
+#define BR_S 50 // Back right sensor
 #define FL_S 23 // Front left sensor
 #define BL_S 45 // Back left sensor
 #define FR_S 25 // Front right sensor
@@ -214,18 +214,7 @@ void loop() {
       }
       else if (shoot) {
         stopMotor();
-        myservo.write(0); // move the servo to desired angle
-        delay(100);
-        myservo.write(90); // move the servo to desired angle
-        delay(100);
-        myservo.write(0); // move the servo to desired angle
-        delay(100);
-        ballCounter -= 1;
-        Serial.println(ballCounter);
-        if (ballCounter == 0) {
-          // reload
-          ballCounter = 10;
-        }
+        shootfcn();
       }
     }
   }
@@ -282,6 +271,23 @@ void turnLeft(int w) {
   digitalWrite(BIN2, HIGH);
   analogWrite(PWM1, w);
   analogWrite(PWM2, w);
+}
+
+void shootfcn() {
+  Serial.println(myservo.read());
+  // change the angle for next time through the loop:
+  myservo.writeMicroseconds(500);
+  delay(100);
+  Serial.println(myservo.read());
+  myservo.writeMicroseconds(2500);
+  delay(100);
+  Serial.println(myservo.read());
+  ballCounter -= 1;
+  Serial.println(ballCounter);
+  if (ballCounter == 0) {
+    // reload
+    ballCounter = 10;
+  }
 }
 
 void setupPixy() {
