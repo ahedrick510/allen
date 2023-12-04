@@ -92,7 +92,7 @@ void loop() {
   isBL_S_Active = digitalRead(BL_S) == 0;
   isFR_S_Active = digitalRead(FR_S) == 0;
   isFL_S_Active = digitalRead(FL_S) == 0;
-  Serial.println("IR sensor data :");
+//  Serial.println("IR sensor data :");
   Serial.println(isBR_S_Active);
   Serial.println(isBL_S_Active);
   Serial.println(isFR_S_Active);
@@ -113,20 +113,20 @@ void loop() {
     targetIsOnTheRight = x > (middle + 10);
     shoot = x >= (middle - 10) && x <= (middle + 10);
   }
-  Serial.println("Target :");
-  Serial.println(targetIsOnTheLeft);
-  Serial.println(targetIsOnTheRight);
-  Serial.println(shoot);
-  Serial.println(noTarget);
+//  Serial.println("Target :");
+//  Serial.println(targetIsOnTheLeft);
+//  Serial.println(targetIsOnTheRight);
+//  Serial.println(shoot);
+//  Serial.println(noTarget);
 
-  int randDelay = random(500, 1500);
-  //int randDir1 = random(2);
+  int randDelay = random(750, 2000);
+  //int randDir = random(2);
   ///////////////// IR SENSOR /////////////////////////////
   if (isFR_S_Active) {
     while (millis() < time + randDelay) {
-      backward(100);                        // Move backward if any of the front sensors are active
-      //Serial.println("BW");
-      turnLeft(100);
+      turnLeftARW(100);                        // Move backward if any of the front sensors are active
+      Serial.println("BW-L");
+//      turnLeft(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
@@ -140,9 +140,9 @@ void loop() {
   }
   else if (isFL_S_Active) {
     while (millis() < time + randDelay) {
-      backward(100);                        // Move backward if any of the front sensors are active
-      //Serial.println("BW");
-      turnRight(100);
+      turnRightALW(100);                        // Move backward if any of the front sensors are active
+      Serial.println("BW-R");
+//      turnRight(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
@@ -156,9 +156,9 @@ void loop() {
   }
   else if (isBR_S_Active) {
     //    turnLeft(100);                        // Turn left if back right sensor active
-    Serial.println("LEFT");
+    Serial.println("FW");
     while (millis() < time + randDelay) {
-      forward(100);
+      turnLeftFW(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
@@ -172,9 +172,9 @@ void loop() {
   }
   else if (isBL_S_Active) {
     //    turnRight(100);                       // Turn right if back left sensor active
-    //Serial.println("RIGHT");
+    Serial.println("FW");
     while (millis() < time + randDelay) {
-      forward(100);
+      turnRightFW(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
@@ -190,7 +190,7 @@ void loop() {
     /////////////////////// PIXY CONTROL //////////////////////////
     if (noTarget) {
       forward(100);
-      //Serial.println("FW");
+      Serial.println("FW");
     }
     else {
       /* Aiming the target */
@@ -237,17 +237,62 @@ void stopMotor() {
 }
 
 /* need to callibrate the direction and PWM value */
-void backward(int w) {
-  digitalWrite(AIN1, HIGH); //Motor A Rotate Counter Clockwise
-  digitalWrite(AIN2, LOW);
+void forward(int w) {
+  digitalWrite(AIN1, LOW); //Motor A Rotate Counter Clockwise
+  digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, LOW); //Motor B Rotate Counter Clockwise
   digitalWrite(BIN2, HIGH);
   analogWrite(PWM1, w);
   analogWrite(PWM2, w);
 }
 
-void forward(int w) {
-  digitalWrite(AIN1, LOW);
+void backward(int w) {
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWM1, w);
+  analogWrite(PWM2, w);
+}
+
+void turnLeftARW(int w) { // turn left about right wheel
+  digitalWrite(AIN1, LOW); // B = left motor, A = right motor, both HIGH = forward, both LOW = backward
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWM1, 0);
+  analogWrite(PWM2, w);
+}
+
+void turnLeftFW(int w) { // turn left forward (for back wheels)
+  digitalWrite(AIN1, LOW); // B = left motor, A = right motor, both HIGH = forward, both LOW = backward
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+  analogWrite(PWM1, w);
+  analogWrite(PWM2, 0);
+}
+
+void turnRightALW(int w) {
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+  analogWrite(PWM1, w);
+  analogWrite(PWM2, 0);
+}
+
+void turnRightFW(int w) {
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+  analogWrite(PWM1, 0);
+  analogWrite(PWM2, w);
+}
+
+void turnLeft(int w) {
+  digitalWrite(AIN1, LOW); // 1 = left motor, 2 = right motor, both HIGH = forward, both LOW = backward
   digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
@@ -256,17 +301,8 @@ void forward(int w) {
 }
 
 void turnRight(int w) {
-  digitalWrite(AIN1, HIGH); // 1 = left motor, 2 = right motor, both HIGH = forward, both LOW = backward
+  digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, HIGH);
-  digitalWrite(BIN2, LOW);
-  analogWrite(PWM1, w);
-  analogWrite(PWM2, w);
-}
-
-void turnLeft(int w) {
-  digitalWrite(AIN1, LOW);
-  digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, HIGH);
   analogWrite(PWM1, w);
@@ -276,10 +312,10 @@ void turnLeft(int w) {
 void shootfcn() {
   Serial.println(myservo.read());
   // change the angle for next time through the loop:
-  myservo.writeMicroseconds(500);
+  myservo.writeMicroseconds(750);
   delay(100);
   Serial.println(myservo.read());
-  myservo.writeMicroseconds(2500);
+  myservo.writeMicroseconds(2000);
   delay(100);
   Serial.println(myservo.read());
   ballCounter -= 1;
