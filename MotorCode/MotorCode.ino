@@ -92,7 +92,7 @@ void loop() {
   isBL_S_Active = digitalRead(BL_S) == 0;
   isFR_S_Active = digitalRead(FR_S) == 0;
   isFL_S_Active = digitalRead(FL_S) == 0;
-//  Serial.println("IR sensor data :");
+  //  Serial.println("IR sensor data :");
   Serial.println(isBR_S_Active);
   Serial.println(isBL_S_Active);
   Serial.println(isFR_S_Active);
@@ -113,20 +113,26 @@ void loop() {
     targetIsOnTheRight = x > (middle + 10);
     shoot = x >= (middle - 10) && x <= (middle + 10);
   }
-//  Serial.println("Target :");
-//  Serial.println(targetIsOnTheLeft);
-//  Serial.println(targetIsOnTheRight);
-//  Serial.println(shoot);
-//  Serial.println(noTarget);
+  //  Serial.println("Target :");
+  //  Serial.println(targetIsOnTheLeft);
+  //  Serial.println(targetIsOnTheRight);
+  //  Serial.println(shoot);
+  //  Serial.println(noTarget);
 
   int randDelay = random(750, 2000);
-  //int randDir = random(2);
+  int randDir = random(2);
   ///////////////// IR SENSOR /////////////////////////////
   if (isFR_S_Active) {
+    backward(100);
     while (millis() < time + randDelay) {
-      turnLeftARW(100);                        // Move backward if any of the front sensors are active
+      if (randDir == 1) {
+        turnLeftARW(100);                      // Move backward if any of the front sensors are active
+      }
+      else {
+        turnLeftFW(100);
+      }
       Serial.println("BW-L");
-//      turnLeft(100);
+      //      turnLeft(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
@@ -139,10 +145,16 @@ void loop() {
     }
   }
   else if (isFL_S_Active) {
+    backward(100);
     while (millis() < time + randDelay) {
-      turnRightALW(100);                        // Move backward if any of the front sensors are active
+      if (randDir == 1) {
+        turnRightALW(100);                        // Move backward if any of the front sensors are active
+      }
+      else {
+        turnRightFW(100);
+      }
       Serial.println("BW-R");
-//      turnRight(100);
+      //      turnRight(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
@@ -155,10 +167,16 @@ void loop() {
     }
   }
   else if (isBR_S_Active) {
+    forward(100);
     //    turnLeft(100);                        // Turn left if back right sensor active
     Serial.println("FW");
     while (millis() < time + randDelay) {
-      turnLeftFW(100);
+      if (randDir == 1) {
+        turnLeftARW(100);                      // Move backward if any of the front sensors are active
+      }
+      else {
+        turnLeftFW(100);
+      }
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
@@ -171,10 +189,16 @@ void loop() {
     }
   }
   else if (isBL_S_Active) {
+    forward(100);
     //    turnRight(100);                       // Turn right if back left sensor active
     Serial.println("FW");
     while (millis() < time + randDelay) {
-      turnRightFW(100);
+      if (randDir == 1) {
+        turnRightALW(100);                        // Move backward if any of the front sensors are active
+      }
+      else {
+        turnRightFW(100);
+      }
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         //          stopMotor();
