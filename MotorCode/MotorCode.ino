@@ -338,7 +338,7 @@ void stopMotor() {
 }
 
 /* need to callibrate the direction and PWM value */
-void forward(int w) {
+void turnRight(int w) {
   digitalWrite(AIN1, LOW); //Motor A Rotate Counter Clockwise
   digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, LOW); //Motor B Rotate Counter Clockwise
@@ -347,7 +347,7 @@ void forward(int w) {
   analogWrite(PWM2, w);
 }
 
-void backward(int w) {
+void turnLeft(int w) {
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, HIGH);
@@ -356,18 +356,18 @@ void backward(int w) {
   analogWrite(PWM2, w);
 }
 
-void turnLeftARW(int w) { // turn left about right wheel
-  digitalWrite(AIN1, LOW); // B = left motor, A = right motor, both HIGH = forward, both LOW = backward
-  digitalWrite(AIN2, HIGH);
+void turnLeftARW(int w) {
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
   analogWrite(PWM1, 0);
   analogWrite(PWM2, w);
 }
 
-void turnLeftFW(int w) { // turn left forward (for back wheels)
-  digitalWrite(AIN1, LOW); // B = left motor, A = right motor, both HIGH = forward, both LOW = backward
-  digitalWrite(AIN2, HIGH);
+void turnLeftFW(int w) {
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, HIGH);
   digitalWrite(BIN2, LOW);
   analogWrite(PWM1, w);
@@ -375,24 +375,24 @@ void turnLeftFW(int w) { // turn left forward (for back wheels)
 }
 
 void turnRightALW(int w) {
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, LOW);
+  digitalWrite(AIN1, LOW); //Motor A Rotate Counter Clockwise
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, LOW); //Motor B Rotate Counter Clockwise
   digitalWrite(BIN2, HIGH);
   analogWrite(PWM1, w);
   analogWrite(PWM2, 0);
 }
 
 void turnRightFW(int w) {
-  digitalWrite(AIN1, HIGH);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, LOW);
+  digitalWrite(AIN1, LOW); //Motor A Rotate Counter Clockwise
+  digitalWrite(AIN2, HIGH);
+  digitalWrite(BIN1, LOW); //Motor B Rotate Counter Clockwise
   digitalWrite(BIN2, HIGH);
   analogWrite(PWM1, 0);
   analogWrite(PWM2, w);
 }
 
-void turnLeft(int w) {
+void forward(int w) {
   digitalWrite(AIN1, LOW); // 1 = left motor, 2 = right motor, both HIGH = forward, both LOW = backward
   digitalWrite(AIN2, HIGH);
   digitalWrite(BIN1, HIGH);
@@ -401,7 +401,7 @@ void turnLeft(int w) {
   analogWrite(PWM2, w);
 }
 
-void turnRight(int w) {
+void backward(int w) {
   digitalWrite(AIN1, HIGH);
   digitalWrite(AIN2, LOW);
   digitalWrite(BIN1, LOW);
