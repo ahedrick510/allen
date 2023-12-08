@@ -18,10 +18,10 @@
 #define ECHO_B 49 // Back ultrasonic
 #define TRIG_B 47
 
-#define BR_S 50 // Back right sensor
-#define FL_S 23 // Front left sensor
+#define BR_S 43 // Back right sensor
+#define FL_S 44 // Front left sensor
 #define BL_S 45 // Back left sensor
-#define FR_S 25 // Front right sensor
+#define FR_S 42 // Front right sensor
 
 #define NO_TARGET_DETECTED 999
 #define PINK_COLOR 0b00000011
