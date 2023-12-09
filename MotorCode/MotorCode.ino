@@ -39,7 +39,7 @@ const int p = 1; // p value for motor speed
 int turning_speed = 0; // motor turning speed when it sees enemy robot
 const int middle = 158; // middle of pixy view
 
-int ballCounter = 10;
+int ballCounter = 0;
 unsigned long time;
 int randDelay;
 int randDir;
@@ -249,7 +249,7 @@ void reload() {
   if (isFR_S_Active) {
     backward(100);
     while (millis() < time + randDelay) {
-      turnLeftARW(100);
+      turnLeft(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         break;
@@ -259,7 +259,7 @@ void reload() {
   else if (isFL_S_Active) {
     backward(100);
     while (millis() < time + randDelay) {
-      turnRightALW(100);
+      turnRight(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         break;
@@ -269,7 +269,7 @@ void reload() {
   else if (isBR_S_Active) {
     forward(100);
     while (millis() < time + randDelay) {
-      turnLeftARW(100);
+      turnLeft(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         break;
@@ -279,7 +279,7 @@ void reload() {
   else if (isBL_S_Active) {
     forward(100);
     while (millis() < time + randDelay) {
-      turnRightALW(100);
+      turnRight(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         break;
@@ -288,8 +288,13 @@ void reload() {
   }
   if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
     if (noGreenTarget) { // if doesn't see any green
-      turnLeft(100);
-      forward(100);
+      while (millis() < time + randDelay) {
+        forward(100);
+        getIRData();
+        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+          break;
+        }
+      }
     }
     else {
       /* Aiming the target */
@@ -316,6 +321,9 @@ void reload() {
       }
       else if (targetIsAtTheMiddle) {
         forward(130);
+        if (isFL_S_Active || isFR_S_Active) {
+          stopMotor();
+        }
       }
     }
   }
