@@ -24,32 +24,24 @@
 #define FR_S 42 // Front right sensor
 
 #define NO_TARGET_DETECTED 999
-#define PINK_COLOR 0b00000011
-#define GREEN_COLOR 0b00000100
 
 Pixy2I2C pixy;
-Servo myservo;
-
-bool targetIsOnTheLeft = false;
-bool targetIsOnTheRight = false;
-bool targetIsAtTheMiddle = false;
+void setupPixy();
+Block getPixyBlockData();
+uint16_t getPixyXCoord();
+uint16_t getPixyColor();
+uint16_t x; // x location of enemy robot
+unsigned int pause = 25;
 bool isTurningLeft = false;
 bool isTurningRight = false;
 const int p = 1; // p value for motor speed
 int turning_speed = 0; // motor turning speed when it sees enemy robot
 const int middle = 158; // middle of pixy view
-
 int ballCounter = 10;
+
+Servo myservo;
+
 unsigned long time;
-int randDelay;
-int randDir;
-
-// reading 1 is white space
-bool isBR_S_Active = false;
-bool isBL_S_Active = false;
-bool isFR_S_Active = false;
-bool isFL_S_Active = false;
-
 //long duration, cm, dist;
 
 void setup() {
@@ -81,55 +73,118 @@ void setup() {
   randomSeed(0);
 }
 
+// reading 1 is white space
+bool isBR_S_Active = false;
+bool isBL_S_Active = false;
+bool isFR_S_Active = false;
+bool isFL_S_Active = false;
+
+bool targetIsOnTheLeft = false;
+bool targetIsOnTheRight = false;
+bool shoot = false;
+bool noTarget = false;
+
+
 void loop() {
   time = millis();
-  getIRData();
-  if (ballCounter > 0) {
-    defend();
-  }
-  else {
-    reload();
-  }
-}
-
-
-void defend() {
-  uint16_t pinkTarget; // x location of enemy robot
-  bool noPinkTarget  = false;
+  //getIRData();
+  isBR_S_Active = digitalRead(BR_S) == 0;
+  isBL_S_Active = digitalRead(BL_S) == 0;
+  isFR_S_Active = digitalRead(FR_S) == 0;
+  isFL_S_Active = digitalRead(FL_S) == 0;
+  //  Serial.println("IR sensor data :");
+  Serial.println(isBR_S_Active);
+  Serial.println(isBL_S_Active);
+  Serial.println(isFR_S_Active);
+  Serial.println(isFL_S_Active);
 
   /* AIMING DATA FROM PIXY */
-  pinkTarget = getPinkCoord();
+  x = getPixyXCoord();
   // update the target data
-  if (pinkTarget == NO_TARGET_DETECTED) {
-    noPinkTarget  = true;
+  if (x == NO_TARGET_DETECTED) {
+    noTarget = true;
     targetIsOnTheLeft = false;
     targetIsOnTheRight = false;
-    targetIsAtTheMiddle = false;
+    shoot = false;
   }
   else {
-    noPinkTarget  = false;
-    targetIsOnTheLeft = pinkTarget < (middle - 10);
-    targetIsOnTheRight = pinkTarget > (middle + 10);
-    targetIsAtTheMiddle = pinkTarget >= (middle - 10) && pinkTarget <= (middle + 10);
+    noTarget = false;
+    targetIsOnTheLeft = x < (middle - 10); // 0-315
+    targetIsOnTheRight = x > (middle + 10);
+    shoot = x >= (middle - 10) && x <= (middle + 10);
   }
+  //  Serial.println("Target :");
+  //  Serial.println(targetIsOnTheLeft);
+  //  Serial.println(targetIsOnTheRight);
+  //  Serial.println(shoot);
+  //  Serial.println(noTarget);
 
-  randDelay = random(750, 2000);
-  randDir = random(2);
+  int randDelay = random(750, 2000);
+  int randDelayFw = random(1000, 3000);
+  int randDir = random(2);
   ///////////////// IR SENSOR /////////////////////////////
-  if (isFR_S_Active) {
-    backward(100);
+  if ((isFR_S_Active && isFL_S_Active) || (isBR_S_Active && isBL_S_Active)) {
+    if (isBR_S_Active && isBL_S_Active) {
+      while (millis() < time + 750) {
+        forward(100);
+        getIRData();
+        if (isFL_S_Active || isFR_S_Active) {
+          break;
+        }
+        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+          stopMotor();
+          break;
+        }
+      }
+    }
+    else if (isFR_S_Active && isFL_S_Active) {
+      while (millis() < time + 750) {
+        backward(100);
+        getIRData();
+        if (isBL_S_Active || isBR_S_Active) {
+          break;
+        }
+        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+          stopMotor();
+          break;
+        }
+      }
+    }
     while (millis() < time + randDelay) {
       if (randDir == 1) {
-        turnLeftARW(100);
+        turnLeft(100);                      // Move backward if any of the front sensors are active
       }
       else {
-        turnLeftFW(100);
+        turnRight(100);
       }
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
         break;
       }
-      if (getPinkCoord() != NO_TARGET_DETECTED) {
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
+        stopMotor();
+        break;
+      }
+    }
+  }
+  else if (isFR_S_Active) {
+    backward(100);
+    while (millis() < time + randDelay) {
+      if (randDir == 1) {
+        turnLeftARW(100);                      // Move backward if any of the front sensors are active
+      }
+      else {
+        turnLeftFW(100);
+      }
+      Serial.println("BW-L");
+      //      turnLeft(100);
+      getIRData();
+      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
+        break;
+      }
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
+        stopMotor();
         break;
       }
     }
@@ -138,16 +193,19 @@ void defend() {
     backward(100);
     while (millis() < time + randDelay) {
       if (randDir == 1) {
-        turnRightALW(100);
+        turnRightALW(100);                        // Move backward if any of the front sensors are active
       }
       else {
         turnRightFW(100);
       }
+      Serial.println("BW-R");
+      //      turnRight(100);
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
         break;
       }
-      if (getPinkCoord() != NO_TARGET_DETECTED) {
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
         stopMotor();
         break;
       }
@@ -155,18 +213,21 @@ void defend() {
   }
   else if (isBR_S_Active) {
     forward(100);
+    //    turnLeft(100);                        // Turn left if back right sensor active
+    Serial.println("FW");
     while (millis() < time + randDelay) {
       if (randDir == 1) {
-        turnLeftARW(100);
+        turnLeftARW(100);                      // Move backward if any of the front sensors are active
       }
       else {
         turnLeftFW(100);
       }
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
         break;
       }
-      if (getPinkCoord() != NO_TARGET_DETECTED) {
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
         stopMotor();
         break;
       }
@@ -174,18 +235,21 @@ void defend() {
   }
   else if (isBL_S_Active) {
     forward(100);
+    //    turnRight(100);                       // Turn right if back left sensor active
+    Serial.println("FW");
     while (millis() < time + randDelay) {
       if (randDir == 1) {
-        turnRightALW(100);
+        turnRightALW(100);                        // Move backward if any of the front sensors are active
       }
       else {
         turnRightFW(100);
       }
       getIRData();
       if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
         break;
       }
-      if (getPinkCoord() != NO_TARGET_DETECTED) {
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
         stopMotor();
         break;
       }
@@ -193,14 +257,40 @@ void defend() {
   }
   if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
     /////////////////////// PIXY CONTROL //////////////////////////
-    if (noPinkTarget) {
-      forward(100);
-      Serial.println("FW");
+    if (noTarget) {
+      while (millis() < time + randDelayFw) {
+        forward(100);
+        getIRData();
+        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+          break;
+        }
+        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+          stopMotor();
+          break;
+        }
+      }
+      while (millis() < time + randDelay) {
+      if (randDir == 1) {
+        turnRight(100);                        // Move backward if any of the front sensors are active
+      }
+      else {
+        turnLeft(100);
+      }
+      getIRData();
+      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+        //          stopMotor();
+        break;
+      }
+      if (getPixyXCoord() != NO_TARGET_DETECTED) {
+        stopMotor();
+        break;
+      }
+    }
     }
     else {
       /* Aiming the target */
       ///// MOTOR SPEED P CONTROL //////////
-      turning_speed = p * (middle - pinkTarget);
+      turning_speed = p * (middle - x);
       turning_speed = map(abs(turning_speed), 0, 158, 10, 125); // changing turning speed to pwm control (puts value between 10 and 200 out of 255)
       Serial.print("turning speed = ");
       Serial.println(turning_speed);
@@ -217,105 +307,9 @@ void defend() {
         isTurningRight = true;
         turnRight(turning_speed);
       }
-      else if (targetIsAtTheMiddle) {
+      else if (shoot) {
         stopMotor();
-        shoot();
-      }
-    }
-  }
-}
-
-void reload() {
-  uint16_t greenTarget; // x location of the reloading location
-  bool isAtReloadStation = false; // !!!!! UPDATE THIS (how to tell that it reaches the station so that it stops) !!!!!
-  bool noGreenTarget = false;
-
-  greenTarget = getGreenCoord();
-  // update the station data
-  if (greenTarget == NO_TARGET_DETECTED) {
-    noGreenTarget  = true;
-    targetIsOnTheLeft = false;
-    targetIsOnTheRight = false;
-    targetIsAtTheMiddle = false;
-  }
-  else {
-    noGreenTarget  = false;
-    targetIsOnTheLeft = greenTarget < (middle - 10); // 0-315
-    targetIsOnTheRight = greenTarget > (middle + 10);
-    targetIsAtTheMiddle = greenTarget >= (middle - 10) && greenTarget <= (middle + 10);
-  }
-
-  randDelay = 100;
-  if (isFR_S_Active) {
-    backward(100);
-    while (millis() < time + randDelay) {
-      turnLeftARW(100);
-      getIRData();
-      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-        break;
-      }
-    }
-  }
-  else if (isFL_S_Active) {
-    backward(100);
-    while (millis() < time + randDelay) {
-      turnRightALW(100);
-      getIRData();
-      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-        break;
-      }
-    }
-  }
-  else if (isBR_S_Active) {
-    forward(100);
-    while (millis() < time + randDelay) {
-      turnLeftARW(100);
-      getIRData();
-      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-        break;
-      }
-    }
-  }
-  else if (isBL_S_Active) {
-    forward(100);
-    while (millis() < time + randDelay) {
-      turnRightALW(100);
-      getIRData();
-      if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
-        break;
-      }
-    }
-  }
-  if (!isFL_S_Active && !isFR_S_Active && !isBL_S_Active && !isBR_S_Active) {
-    if (noGreenTarget) { // if doesn't see any green
-      turnLeft(100);
-      forward(100);
-    }
-    else {
-      /* Aiming the target */
-      turning_speed = p * (middle - greenTarget);
-      turning_speed = map(abs(turning_speed), 0, 158, 10, 125); // changing turning speed to pwm control (puts value between 10 and 200 out of 255)
-      Serial.print("turning speed = ");
-      Serial.println(turning_speed);
-
-      if (isAtReloadStation) { // always false (for now)
-        // not it just run forward the green target (no stop)
-        // reload
-        delay(5000);
-        ballCounter = 10;
-      }
-      else if (targetIsOnTheRight) {
-        isTurningLeft = false;
-        isTurningRight = true;
-        turnRight(turning_speed);
-      }
-      else if (targetIsOnTheLeft) {
-        isTurningLeft = true;
-        isTurningRight = false;
-        turnLeft(turning_speed);
-      }
-      else if (targetIsAtTheMiddle) {
-        forward(130);
+        shootfcn();
       }
     }
   }
@@ -325,7 +319,7 @@ void getIRData() {
   isBR_S_Active = digitalRead(BR_S) == 0;
   isBL_S_Active = digitalRead(BL_S) == 0;
   isFR_S_Active = digitalRead(FR_S) == 0;
-  isFL_S_Active = digitalRead(FL_S) == 0;
+  isFL_S_Active = digitalRead(FL_S) == 0;  
 }
 
 void stopMotor() {
@@ -410,15 +404,21 @@ void backward(int w) {
   analogWrite(PWM2, w);
 }
 
-void shoot() {
+void shootfcn() {
+  Serial.println(myservo.read());
   // change the angle for next time through the loop:
   myservo.writeMicroseconds(750);
   delay(100);
+  Serial.println(myservo.read());
   myservo.writeMicroseconds(2000);
   delay(100);
+  Serial.println(myservo.read());
   ballCounter -= 1;
-  Serial.print("Balls Left :");
   Serial.println(ballCounter);
+  if (ballCounter == 0) {
+    // reload
+    ballCounter = 10;
+  }
 }
 
 void setupPixy() {
@@ -434,22 +434,6 @@ Block getPixyBlockData() {
     return pixy.ccc.blocks[0];
 
   }
-}
-
-uint16_t getPinkCoord() {
-  pixy.ccc.getBlocks(PINK_COLOR);
-  if (pixy.ccc.numBlocks) {
-    return pixy.ccc.blocks[0].m_x;
-  }
-  return NO_TARGET_DETECTED;
-}
-
-uint16_t getGreenCoord() {
-  pixy.ccc.getBlocks(GREEN_COLOR);
-  if (pixy.ccc.numBlocks) {
-    return pixy.ccc.blocks[0].m_x;
-  }
-  return NO_TARGET_DETECTED;
 }
 
 uint16_t getPixyXCoord() {
@@ -489,3 +473,28 @@ uint16_t getPixyColor() {
 //  }
 //  delay(250);
 //}
+
+
+// No Target
+
+//      int randDir = random(3);                            // 0 - left or 1 - right
+//      int randDelay = random(500, 1500);
+//      if (randDir == 0){
+//        turnLeft(75);
+//      }
+//      else if (randDir == 1) {
+//        turnRight(75);
+//      }
+//      else if (randDir == 2) {
+//        forward(75);
+//      }
+//      //delay(randDelay);
+//      while (millis() < time + randDelay) {
+//        if (isFL_S_Active || isFR_S_Active || isBL_S_Active || isBR_S_Active) {
+//          break;
+//        }
+//        if (getPixyXCoord() != NO_TARGET_DETECTED) {
+//            break;
+//    }
+//      }
+//stopMotor();
